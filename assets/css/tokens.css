@@ -1,0 +1,257 @@
+/*
+ * Spec Canvas Design Tokens
+ *
+ * 색상 체계:
+ * - Navy   = Primary (브랜드 메인, CTA)
+ * - Orange = Accent (배너·가격·CTA)
+ * - Lime   = Secondary·강조
+ * - Gray   = Neutral (텍스트·배경·테두리)
+ * - Semantic: Green(success) / Red(danger) / Amber(warning) / Blue(info) / Purple
+ */
+
+/* ===== Web Fonts (운영 사이트 일치 — 미로딩 시 -apple-system 폴백되어 톤 어긋남) =====
+ * @import는 @charset 외 모든 규칙보다 앞서야 유효(:root 위). 뷰 시점 CDN fetch 필요. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css");
+@import url("https://webfontworld.github.io/gmarket/GmarketSans.css");
+
+:root {
+  /* ===== Primary: Navy ===== */
+  --navy-50:  #edf3fd;
+  --navy-100: #d5dffa;
+  --navy-200: #b4c5f5;
+  --navy-300: #8da6ee;
+  --navy-400: #6485e5;
+  --navy-500: #4b72d9;
+  --navy-600: #2b4ad2;
+  --navy-700: #1e3599;
+  --navy-800: #152670;
+  --navy-900: #0d1847;
+
+  /* ===== Secondary: Lime (Secondary·강조) ===== */
+  /* shadcn 토큰 HSL → HEX 변환 */
+  --lime-50:  #effadc;
+  --lime-100: #e0f1c1;
+  --lime-200: #d3efa3;
+  --lime-300: #bbe96b;
+  --lime-400: #9fda39;
+  --lime-500: #84c90c;
+  --lime-600: #72aa10;
+  --lime-700: #5d890f;
+  --lime-800: #3e5e09;
+  --lime-900: #243604;
+
+  /* ===== Custom Yellow (강조 텍스트 전용) ===== */
+  /* 운영: --custom-yellow: hsl(59, 100%, 50%) */
+  --custom-yellow: #fffa00;
+
+  /* ===== Neutral: Gray ===== */
+  --gray-50:  #f9f9fb;
+  --gray-100: #f0f2f7;
+  --gray-200: #e0e4eb;
+  --gray-300: #c5cad4;
+  --gray-400: #9ea4b0;
+  --gray-500: #6b7180;
+  --gray-600: #5e6370;
+  --gray-700: #484d57;
+  --gray-800: #2f3239;
+  --gray-900: #17191e;
+
+  /* ===== Semantic ===== */
+  --green-100: #dcfce7;
+  --green-400: #5bb64b;
+  --green-700: #15803d;
+
+  --red-100: #fee2e2;
+  --red-500: #c93b3b;
+  --red-700: #b91c1c;
+
+  --amber-100: #fef3c7;
+  --amber-600: #b45309;
+  --amber-700: #92400e;
+
+  /* ===== Membership: Orange (full scale, 운영 토큰 HSL → HEX 변환) ===== */
+  --orange-50:  #fef9eb;
+  --orange-100: #fdedc7;
+  --orange-200: #fcd98b;
+  --orange-300: #f8a825;
+  --orange-400: #f3840c;  /* Accent main tone */
+  --orange-500: #d66108;
+  --orange-600: #b2420a;
+  --orange-700: #91320e;
+  --orange-800: #772910;
+  --orange-900: #431303;
+
+  --blue-100: #dbeafe;
+  --blue-600: #2563eb;
+
+  --purple-100: #ede9fe;
+  --purple-600: #7c3aed;
+
+  /* ===== 시맨틱 별칭 (역할 기반) ===== */
+  --color-bg:           #ffffff;
+  --color-bg-subtle:    var(--gray-50);
+  --color-bg-muted:     var(--gray-100);
+  --color-surface:      #ffffff;
+
+  --color-text:         var(--gray-900);
+  --color-text-muted:   var(--gray-600);
+  --color-text-subtle:  var(--gray-400);
+  --color-text-on-dark: #ffffff;
+
+  --color-border:       var(--gray-200);
+  --color-border-strong:var(--gray-300);
+
+  --color-primary:      var(--navy-600);
+  --color-primary-hover:var(--navy-700);
+  --color-primary-soft: var(--navy-50);
+
+  --color-accent:       var(--lime-500);
+  --color-accent-hover: var(--lime-600);
+  --color-accent-soft:  var(--lime-50);
+
+  /* 일반 키컬러(navy/lime)로 처리. 강조가/배너는 navy 그라데 직접 사용 */
+
+  /* SUT 가격 — Navy (Primary, 운영 일치: text-interactive-primary) */
+  --color-accent:        var(--navy-600);
+  --color-accent-soft:   var(--navy-50);
+  --color-accent-strong: var(--navy-700);
+
+  /* ===== 운영 시맨틱 토큰 ===== */
+  /* Text */
+  --text-primary:       var(--gray-900);
+  --text-secondary:     var(--gray-700);
+  --text-tertiary:      var(--gray-500);
+  --text-quaternary:    var(--gray-300);
+  --text-inverse:       #ffffff;
+  --text-interactive-primary:   var(--navy-600);   /* 강조가·가격·링크 (주력) */
+  --text-interactive-secondary: var(--lime-600);   /* 보조 강조 (배지·아이콘 일부) */
+
+  /* Background */
+  --background-primary:   #ffffff;
+  --background-secondary: var(--gray-50);
+  --background-tertiary:  var(--navy-50);          /* 강조가 라벨 bg */
+  --background-quaternary:var(--lime-50);
+  --background-inverse:   var(--gray-900);
+
+  /* Border */
+  --border-primary:   var(--gray-100);
+  --border-secondary: var(--gray-200);             /* 일반 라벨 테두리 */
+  --border-tertiary:  var(--gray-400);
+  --border-interactive-primary:   var(--navy-600); /* 강조가 테두리 */
+  --border-interactive-secondary: var(--lime-500);
+
+  /* Icon */
+  --icon-primary:   var(--navy-600);
+  --icon-secondary: var(--lime-500);
+
+  /* Feedback */
+  --feedback-success: var(--green-400);
+  --feedback-warning: var(--orange-400);
+  --feedback-danger:  var(--red-500);
+
+  /* 상태 — Semantic (상태 배지 등 상태 표현 SSOT). -soft=배경, 무첨자=텍스트/아이콘 */
+  --color-success:      var(--green-700);   /* 완료/정상 */
+  --color-success-soft: var(--green-100);
+  --color-warning:      var(--amber-600);   /* 대기/검수 (배지 의도색 #b45309 — amber-700 #92400e 불일치 정정) */
+  --color-warning-soft: var(--amber-100);
+  --color-danger:       var(--red-700);     /* 취소/오류 */
+  --color-danger-soft:  var(--red-100);
+  --color-info:         var(--blue-600);    /* 승인/안내 */
+  --color-info-soft:    var(--blue-100);
+  --color-progress:     var(--purple-600);  /* 배송/진행 중 */
+  --color-progress-soft:var(--purple-100);
+
+  /* ===== Typography ===== */
+  --font-sans:    'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+  --font-gmarket: 'Gmarket Sans', 'Pretendard', sans-serif;  /* 운영 brand-* 폰트 */
+  --font-mono:    'SF Mono', Monaco, Menlo, Consolas, monospace;
+
+  /* Brand Typography Scale (운영 사이트 .brand-* 클래스) */
+  --brand-11: 11px;   /* mobile body small */
+  --brand-13: 13px;   /* mobile body */
+  --brand-15: 15px;   /* 500 weight, 130% */
+  --brand-16: 16px;   /* 700, Gmarket, 140% — 강조 배너 web */
+  --brand-18: 18px;
+  --brand-24: 24px;
+  --brand-32: 32px;   /* 130% */
+  --brand-48: 48px;   /* 140% */
+
+  /* 일반 시맨틱 fs-* (편의 별칭) */
+  --fs-display:  32px;
+  --fs-h1:       28px;
+  --fs-h2:       24px;
+  --fs-h3:       20px;
+  --fs-h4:       18px;
+  --fs-body-lg:  16px;
+  --fs-body:     14px;
+  --fs-caption:  12px;
+  --fs-tiny:     11px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --lh-tight:    1.2;
+  --lh-normal:   1.5;
+  --lh-loose:    1.7;
+  --lh-brand:    1.4;   /* 운영 brand-* 기본 라인높이 */
+
+  /* ===== Spacing (4px base) ===== */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ===== Border Radius ===== */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-full: 9999px;
+
+  /* ===== Shadow (Elevation) ===== */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-2: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-3: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-4: 0 8px 24px rgba(0,0,0,0.10);
+  --shadow-5: 0 16px 48px rgba(0,0,0,0.14);
+
+  /* ===== Breakpoints (참조용, JS·@media에서) ===== */
+  --bp-mobile: 767px;
+  --bp-tablet: 1024px;
+  --bp-web:    1280px;   /* Spec Canvas 표준 */
+
+  /* ===== Transition ===== */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+
+  /* ===== OAuth 색상 (운영 HTML 직접 추출) ===== */
+  --color-kakao:        #FFE402;   /* 카카오 노랑 */
+  --color-naver:        #05C050;   /* 네이버 초록 */
+  --color-google-border:#E0E0E2;   /* 구글 테두리 */
+
+  /* ===== Shadow Custom (캐러셀 nav 버튼 등) ===== */
+  --shadow-custom: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+
+  /* ===== Assets (SVG·Image 토큰) — 운영 사이트 직접 다운로드 ===== */
+  /* 헤더·네비 아이콘 (currentColor 지원 — fill을 CSS로 제어) */
+  --asset-icon-back:           url('../svg/icon-back.svg');
+  --asset-icon-search:         url('../svg/icon-search.svg');
+  --asset-icon-heart-default:  url('../svg/icon-heart-default.svg');
+  --asset-icon-heart-filled:   url('../svg/icon-heart-filled.svg');
+  --asset-icon-share:          url('../svg/icon-share.svg');
+
+  /* 경로 베이스 (HTML img src에서 참조용) */
+  --asset-base-svg: 'assets/svg/';
+  --asset-base-img: 'assets/img/';
+}

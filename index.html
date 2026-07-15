@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spec Canvas · 화면기획 점검 하니스</title>
+<link rel="stylesheet" href="assets/css/tokens.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--font-sans, -apple-system, "Pretendard", sans-serif);
+    background: var(--gray-100, #f1f3f5);
+    color: var(--gray-900, #212529);
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    flex-shrink: 0; height: 52px; display: flex; align-items: center; gap: 16px;
+    padding: 0 16px; background: var(--navy-700, #1e3599); color: #fff;
+  }
+  .topbar .brand { font-weight: 700; font-size: 14px; letter-spacing: -0.2px; }
+  .topbar .brand .accent { color: var(--lime-400, #c2f542); }
+  .topbar .base-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .topbar .base-wrap label { font-size: 11px; opacity: .8; }
+  .topbar .lang-all { margin-left: 12px; font-size: 11px; font-weight: 700; padding: 4px 11px; border: 1px solid rgba(255,255,255,.28); border-radius: 6px; background: rgba(255,255,255,.08); color: #fff; cursor: pointer; line-height: 1.3; white-space: nowrap; }
+  .topbar .lang-all:hover { background: rgba(255,255,255,.16); }
+  .topbar .lang-all.on { background: var(--lime-400, #c2f542); color: #17191e; border-color: var(--lime-400, #c2f542); }
+  .topbar input.base-url {
+    width: 220px; font-size: 12px; font-family: var(--font-mono, monospace);
+    padding: 5px 8px; border-radius: 6px; border: none; background: rgba(255,255,255,.15); color: #fff;
+  }
+  .topbar input.base-url::placeholder { color: rgba(255,255,255,.6); }
+  .topbar .conn { font-size: 11px; padding: 3px 8px; border-radius: 9999px; background: rgba(255,255,255,.15); }
+  .topbar .conn.ok { background: var(--green-500, #22c55e); }
+  .topbar .conn.bad { background: var(--red-500, #ef4444); }
+
+  /* ── 3-Pane Layout ── */
+  .layout { flex: 1; display: flex; min-height: 0; }
+
+  /* Left: route list */
+  .pane-left {
+    width: 280px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--gray-200, #dee2e6);
+    overflow-y: auto; padding: 8px 0;
+  }
+  .progress-box { padding: 10px 14px; border-bottom: 1px solid var(--gray-100, #e9ecef); }
+  .progress-box .label { font-size: 11px; color: var(--gray-500, #868e96); display: flex; justify-content: space-between; }
+  .progress-bar { margin-top: 6px; height: 6px; background: var(--gray-100, #e9ecef); border-radius: 9999px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; background: var(--lime-400, #84cc16); transition: width 300ms; }
+  .nav-group-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--gray-400, #adb5bd); padding: 14px 14px 4px;
+  }
+  .nav-group-title.collapsible {
+    display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+    padding: 10px 12px; border-top: 1px solid var(--gray-100, #f1f3f5);
+  }
+  .nav-group-title.collapsible:hover { background: var(--gray-50, #f8f9fa); color: var(--gray-600, #6c757d); }
+  .nav-group-title .caret { display: inline-block; font-size: 9px; transition: transform .15s; color: var(--gray-400, #adb5bd); }
+  .nav-group-title.is-collapsed .caret { transform: rotate(-90deg); }
+  .nav-group-title .gt-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-group-title .gt-count { font-size: 9px; font-weight: 600; color: var(--gray-400, #adb5bd); background: var(--gray-100, #f1f3f5); border-radius: 9999px; padding: 1px 7px; }
+  .nav-group-items.hidden { display: none; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 14px; cursor: pointer;
+    font-size: 13px; color: var(--gray-700, #495057); border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: var(--gray-50, #f8f9fa); }
+  .nav-item.active { background: var(--navy-50, #edf3fd); color: var(--navy-700, #1e3599); border-left-color: var(--navy-600, #2b4ad2); font-weight: 600; }
+  .nav-item .chk {
+    width: 16px; height: 16px; flex-shrink: 0; border-radius: 4px; border: 1.5px solid var(--gray-300, #ced4da);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #fff;
+  }
+  .nav-item.checked .chk { background: var(--green-500, #22c55e); border-color: var(--green-500, #22c55e); }
+  .nav-item .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nav-item .path { font-size: 10px; font-family: var(--font-mono, monospace); color: var(--gray-400, #adb5bd); }
+  .nav-item .tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; }
+  /* 부모자식: 하위 상태 화면 (예: 단계 1→단계 2→단계 3) */
+  .nav-item.nav-child { padding-left: 30px; }
+  .nav-item.nav-child .label { font-size: 12px; color: var(--gray-500, #6c757d); }
+  .nav-item.nav-child .label::before { content: 'ㄴ'; margin-right: 5px; color: var(--gray-400, #adb5bd); font-size: 10px; }
+  .nav-item.nav-child.active .label { color: var(--navy-700, #1e3599); }
+  .tag.dyn { background: var(--amber-100, #fef3c7); color: var(--amber-700, #b45309); }
+  .tag.todo { background: var(--gray-200, #dee2e6); color: var(--gray-600, #6c757d); }
+  .tag.auth { background: var(--purple-100, #ede9fe); color: var(--purple-700, #6d28d9); }
+  .tag.ready { background: var(--lime-100, #e0f1c1); color: var(--lime-700, #5d890f); }
+  .tag.dep { background: var(--gray-200, #dee2e6); color: var(--gray-500, #868e96); text-decoration: line-through; }
+  .tag.done { background: var(--green-100, #dcfce7); color: var(--green-700, #15803d); }
+
+  /* Center: live iframe */
+  .pane-center { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--gray-200, #dee2e6); }
+  .center-bar {
+    flex-shrink: 0; height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    background: var(--gray-50, #f8f9fa); border-bottom: 1px solid var(--gray-200, #dee2e6);
+  }
+  .center-bar .dots { display: flex; gap: 5px; }
+  .center-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gray-300, #ced4da); }
+  .center-bar .url {
+    flex: 1; font-size: 12px; font-family: var(--font-mono, monospace); color: var(--gray-600, #6c757d);
+    background: #fff; border: 1px solid var(--gray-200, #dee2e6); border-radius: 6px; padding: 5px 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vp-btns { display: flex; gap: 4px; }
+  .vp-btn {
+    font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--gray-300, #ced4da);
+    background: #fff; cursor: pointer; color: var(--gray-600, #6c757d);
+  }
+  .vp-btn.active { background: var(--navy-600, #2b4ad2); color: #fff; border-color: var(--navy-600, #2b4ad2); }
+  .center-bar .icon-btn { font-size: 13px; padding: 4px 8px; border: 1px solid var(--gray-300,#ced4da); background:#fff; border-radius:6px; cursor:pointer; text-decoration:none; color: var(--gray-700,#495057); }
+  .frame-scroll { flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; padding: 0; min-height: 0; }
+  .frame-wrap { background: #fff; overflow: hidden; flex-shrink: 0; }
+  .frame-wrap.boxed { box-shadow: 0 4px 24px rgba(0,0,0,.12); border-radius: 8px; margin-top: 16px; }
+  /* iframe은 논리 픽셀 크기로 그린 뒤 transform: scale로 패널에 맞춘다 */
+  iframe.live { display: block; border: none; background: #fff; transform-origin: top left; }
+  .empty-center { margin: auto; text-align: center; color: var(--gray-500, #868e96); font-size: 13px; }
+
+  /* Right: description */
+  .pane-right {
+    width: 340px; flex-shrink: 0; background: #fff; border-left: 1px solid var(--gray-200, #dee2e6);
+    overflow-y: auto; padding: 16px;
+  }
+  .pane-right h2 { font-size: 15px; margin: 0 0 2px; color: var(--navy-700, #1e3599); }
+  .pane-right .sub-path { font-size: 11px; font-family: var(--font-mono, monospace); color: var(--gray-400, #adb5bd); margin-bottom: 14px; }
+  .desc-section { margin-bottom: 16px; }
+  .desc-section .h { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--gray-400, #adb5bd); margin-bottom: 6px; }
+  .desc-section .body { font-size: 13px; line-height: 1.6; color: var(--gray-700, #495057); }
+  /* 화면기획서(Screen Spec) 마크다운 렌더 */
+  .spec-doc { font-size: 12px; line-height: 1.6; color: var(--gray-700, #495057); }
+  .spec-doc h2 { font-size: 14px; margin: 6px 0 8px; color: var(--navy-700, #1e3599); }
+  .spec-doc h3 { font-size: 12.5px; margin: 14px 0 5px; color: var(--navy-600, #2b4ad2); font-weight: 700; }
+  .spec-doc h4 { font-size: 12px; margin: 10px 0 4px; color: var(--gray-800, #343a40); }
+  .spec-doc p { margin: 5px 0; }
+  .spec-doc ul, .spec-doc ol { margin: 5px 0 5px 0; padding-left: 18px; }
+  .spec-doc li { margin: 2px 0; }
+  .spec-doc strong { color: var(--gray-900, #17191e); }
+  .spec-doc code { font-family: var(--font-mono, monospace); font-size: 11px; background: var(--gray-100, #f1f3f5); padding: 1px 4px; border-radius: 3px; color: var(--navy-700,#1e3599); }
+  .spec-doc hr { border: none; border-top: 1px solid var(--gray-200, #dee2e6); margin: 12px 0; }
+  .spec-doc blockquote { margin: 6px 0; padding: 6px 10px; border-left: 3px solid var(--navy-200, #b4c5f5); background: var(--gray-50, #f9f9fb); color: var(--gray-600,#6c757d); font-size: 11.5px; }
+  .spec-doc table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 11px; display: block; overflow-x: auto; }
+  .spec-doc th, .spec-doc td { border: 1px solid var(--gray-200, #dee2e6); padding: 4px 6px; text-align: left; vertical-align: top; }
+  .spec-doc th { background: var(--gray-50, #f9f9fb); font-weight: 700; color: var(--gray-800,#343a40); white-space: nowrap; }
+  .spec-toggle { font-size: 11px; color: var(--navy-600,#2b4ad2); cursor: pointer; user-select: none; margin-bottom: 6px; }
+  /* 화면기획서 KO/EN 언어 토글 */
+  .spec-doc.collapsed { max-height: 360px; overflow: hidden; position: relative; }
+  .spec-doc.collapsed::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); }
+  .check-toggle {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px;
+    background: var(--gray-50, #f8f9fa); cursor: pointer; font-size: 13px; font-weight: 600; margin-bottom: 16px;
+    border: 1px solid var(--gray-200, #dee2e6);
+  }
+  .check-toggle.on { background: var(--green-50, #f0fdf4); border-color: var(--green-500, #22c55e); color: var(--green-700, #15803d); }
+  .check-toggle .box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--gray-300, #ced4da); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; }
+  .check-toggle.on .box { background: var(--green-500, #22c55e); border-color: var(--green-500, #22c55e); }
+  .notes {
+    width: 100%; min-height: 120px; resize: vertical; font-size: 13px; line-height: 1.6;
+    border: 1px solid var(--gray-200, #dee2e6); border-radius: 8px; padding: 10px; font-family: inherit;
+  }
+  .notes:focus { outline: none; border-color: var(--navy-400, #6485e5); }
+  .saved-hint { font-size: 10px; color: var(--gray-400, #adb5bd); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Spec<span class="accent"> Canvas</span> · 화면기획 3분할 뷰어</div>
+  <span class="conn" id="conn">확인 중…</span>
+  <button class="lang-all" id="langAll" title="한 번에 KO ↔ EN 전환 — 좌측 목록 · 중앙 화면 · 우측 기획서 동시">🌐 KO</button>
+  <div class="base-wrap">
+    <label>BASE</label>
+    <input class="base-url" id="baseUrl" value="http://localhost:8000" spellcheck="false">
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT -->
+  <aside class="pane-left">
+    <div class="progress-box">
+      <div class="label"><span>점검 진행률</span><span id="progressText">0 / 0</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="pane-center">
+    <div class="center-bar">
+      <div class="dots"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#28c941"></span></div>
+      <span class="url" id="urlBar">라우트를 선택하세요</span>
+      <div class="vp-btns">
+        <button class="vp-btn active" data-w="1280" data-mode="fit">PC</button>
+        <button class="vp-btn" data-w="768" data-mode="device">Tablet</button>
+        <button class="vp-btn" data-w="375" data-mode="device">Mobile</button>
+      </div>
+      <span class="vp-btn" id="scaleBadge" style="cursor:default; pointer-events:none;">100%</span>
+      <a class="icon-btn" id="openNew" href="#" target="_blank" rel="noopener" title="새 탭">↗</a>
+      <button class="icon-btn" id="reload" title="새로고침">⟳</button>
+    </div>
+    <div class="frame-scroll" id="frameScroll">
+      <div class="empty-center" id="emptyCenter">← 왼쪽 목록에서 화면을 선택하면 라이브 프론트엔드가 여기에 표시됩니다.</div>
+      <div class="frame-wrap" id="frameWrap" style="display:none; width:100%; height:100%;">
+        <iframe class="live" id="liveFrame" title="live frontend"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT -->
+  <aside class="pane-right" id="paneRight">
+    <div class="empty-center" style="margin-top:40px;">화면을 선택하면 점검 디스크립션이 표시됩니다.</div>
+  </aside>
+</div>
+
+<!-- 화면기획서 데이터(컴포넌트별 섹션, window.SPECS / window.SPECS_EN) -->
+<script src="assets/js/specs.js"></script>
+<script src="assets/js/specs-en.js"></script>
+
+
+<script>
+// ── 라우트 정의 (frontend/app 실측 기반) ──
+// status: 'live'(정상), 'dyn'(동적 파라미터-샘플 ID), 'auth'(보호경로-PROTOTYPE_MODE 필요), 'todo'(신규-미구현 404), 'ready'(정적 컴포넌트-제작완료)
+// static:true → iframe을 라이브 앱(baseUrl) 대신 상대 파일경로(컴포넌트 HTML)로 로드
+const ROUTES = [
+  { group: 'Sample Pages', items: [
+    { label: 'Example Page', path: 'components/x-example-page.html', status: 'ready', static: true, note: 'Sidebar + header + page title + search + button + card + table + pagination components composed into one page.' },
+  ]},
+  { group: 'Sample Components', items: [
+    { label: 'Button', path: 'components/c-button.html', status: 'ready', static: true, note: 'Generic button atom — primary/secondary/disabled states.' },
+    { label: 'Search Input', path: 'components/c-search-input.html', status: 'ready', static: true, note: 'Generic search input atom.' },
+    { label: 'Sidebar', path: 'components/c-sidebar.html', status: 'ready', static: true, note: 'Generic sidebar shell rendering the MENU data in assets/js/admin-shell.js. Replace with your own navigation.' },
+  ]},
+];
+
+const LS_CHECK = 'spec-canvas-harness-check';
+const LS_NOTE  = 'spec-canvas-harness-note';
+const getStore = (k) => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } };
+const setStore = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+let baseUrl = 'http://localhost:8000';
+let current = null;
+let vp = { w: 1280, mode: 'fit' };  // w = 논리 픽셀 폭
+
+const flat = ROUTES.flatMap(g => g.items.map(it => ({ ...it, group: g.group })));
+
+const el = (id) => document.getElementById(id);
+const tagHtml = (s, checked) => checked ? '<span class="tag done">COMPLETED</span>'
+  : s === 'dyn' ? '<span class="tag dyn">[id]</span>'
+  : s === 'todo' ? '<span class="tag todo">TODO</span>'
+  : s === 'auth' ? '<span class="tag auth">AUTH</span>'
+  : s === 'ready' ? '<span class="tag ready">READY</span>'
+  : s === 'dep' ? '<span class="tag dep">DEP</span>' : '';
+
+const LS_COLLAPSE = 'spec-canvas-harness-collapse';
+// 나브 타이틀 언어 — 좌측 목록 라벨만 KO/EN 전환
+let navLang = (() => { try { return localStorage.getItem('spec_canvas_navlang') || 'ko'; } catch (e) { return 'ko'; } })();
+// 한글 전용 라벨의 영문 대응(파싱 불가한 것만 보강) — 프로젝트에 맞게 채워 넣는다
+const NAV_EN = {};
+function navLabel(label) {
+  if (navLang === 'ko') return label;
+  if (NAV_EN[label]) return NAV_EN[label];
+  // "prefix engName · 한글" → 영문부(앞, ' · ' 기준)
+  const m = label.match(/^(.+?) · (.+)$/);
+  return m ? m[1].trim() : label;
+}
+function renderNav() {
+  const checks = getStore(LS_CHECK);
+  const collapsed = getStore(LS_COLLAPSE);
+  const nav = el('nav');
+  nav.innerHTML = '';
+  ROUTES.forEach((g, gi) => {
+    // 기본: 첫 그룹(확정 v2)만 펼침, 나머지는 접힘. 저장된 상태가 있으면 우선.
+    const isCollapsed = (g.group in collapsed) ? collapsed[g.group] : (gi !== 0);
+    const t = document.createElement('div');
+    t.className = 'nav-group-title collapsible' + (isCollapsed ? ' is-collapsed' : '');
+    t.innerHTML = `<span class="caret">▾</span><span class="gt-label">${g.group}</span><span class="gt-count">${g.items.length}</span>`;
+    nav.appendChild(t);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'nav-group-items' + (isCollapsed ? ' hidden' : '');
+    g.items.forEach(it => {
+      const d = document.createElement('div');
+      const isChecked = !!checks[it.path];
+      d.className = 'nav-item' + (it.child ? ' nav-child' : '') + (isChecked ? ' checked' : '') + (current === it.path ? ' active' : '');
+      d.innerHTML = `<span class="chk">${isChecked ? '✓' : ''}</span>
+        <span class="label">${navLabel(it.label)} ${tagHtml(it.status, isChecked)}</span>`;
+      d.onclick = () => select(it.path);
+      wrap.appendChild(d);
+    });
+    nav.appendChild(wrap);
+
+    t.onclick = () => {
+      const now = !t.classList.contains('is-collapsed');
+      t.classList.toggle('is-collapsed', now);
+      wrap.classList.toggle('hidden', now);
+      const c = getStore(LS_COLLAPSE); c[g.group] = now; setStore(LS_COLLAPSE, c);
+    };
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const checks = getStore(LS_CHECK);
+  const done = flat.filter(it => checks[it.path]).length;
+  el('progressText').textContent = `${done} / ${flat.length}`;
+  el('progressFill').style.width = (flat.length ? (done / flat.length * 100) : 0) + '%';
+}
+
+// ── 페이지 언어 KO/EN — en/ 사본이 있으면 영어판 로드, 없으면 KO 폴백 ──
+// 과거 EN 고정 상태 1회 해제 → 기본 KO (localStorage에 en이 박혀 영어로 시작하던 문제 방지)
+try {
+  if (localStorage.getItem('spec_canvas_pagelang_reset') !== '1') {
+    localStorage.setItem('spec_canvas_pagelang', 'ko');
+    localStorage.setItem('spec_canvas_pagelang_reset', '1');
+  }
+} catch (e) {}
+let pageLang = localStorage.getItem('spec_canvas_pagelang') || 'ko';
+let _langReq = 0; // 최신 언어 선택 토큰 — 비동기 resolveLangPath race 방지
+const EN_EXISTS = {};
+async function resolveLangPath(path) {
+  if (pageLang !== 'en' || !path.startsWith('components/')) return path;
+  const enPath = path.replace(/^components\//, 'components/en/');
+  if (enPath in EN_EXISTS) return EN_EXISTS[enPath] ? enPath : path;
+  try {
+    const r = await fetch(enPath, { method: 'HEAD' });
+    EN_EXISTS[enPath] = r.ok;
+    return r.ok ? enPath : path;
+  } catch (e) { EN_EXISTS[enPath] = false; return path; }
+}
+
+function select(path) {
+  current = path;
+  const it = flat.find(r => r.path === path);
+  el('emptyCenter').style.display = 'none';
+  el('frameWrap').style.display = 'block';
+  // 정적 컴포넌트(static)는 하니스 상대경로 직접 로드(EN 모드면 en/ 사본 우선), 그 외는 라이브 앱(baseUrl) 경유
+  if (it && it.static) {
+    const myReq = ++_langReq;
+    resolveLangPath(path).then(p => {
+      if (myReq !== _langReq || current !== path) return; // 더 최신 선택이 있으면 무시 (race 방지)
+      // 캐시버스터(?v=)는 해시(#tab) 앞에 넣어야 함 — 해시 뒤에 붙으면 탭 딥링크가 깨짐
+      const hi = p.indexOf('#');
+      const base = hi >= 0 ? p.slice(0, hi) : p;
+      const hash = hi >= 0 ? p.slice(hi) : '';
+      const pv = base + (base.includes('?') ? '&' : '?') + 'v=20260622e' + hash;
+      const frame = el('liveFrame');
+      // 가운데 화면 안에서 탭 클릭(해시 변경) 시 좌측 nav 자녀 선택 동기화
+      frame.onload = () => {
+        try {
+          frame.contentWindow.addEventListener('hashchange', () => {
+            try {
+              const np = (current || '').split('#')[0] + (frame.contentWindow.location.hash || '');
+              if (flat.some(r => r.path === np)) { current = np; el('urlBar').textContent = np; el('openNew').href = frame.src; renderNav(); }
+            } catch (e) {}
+          });
+        } catch (e) {}
+      };
+      frame.src = (pv && pv.indexOf('.html') >= 0)
+        ? (function(u){ var h=''; var hi=u.indexOf('#'); if(hi>=0){ h=u.slice(hi); u=u.slice(0,hi); } return u + (u.indexOf('?')>=0?'&':'?') + '_=' + Date.now() + h; })(pv)
+        : pv;
+      el('urlBar').textContent = p;
+      el('openNew').href = pv;
+    });
+  } else {
+    const full = baseUrl.replace(/\/$/, '') + path;
+    el('liveFrame').src = full;
+    el('urlBar').textContent = full;
+    el('openNew').href = full;
+  }
+  applyViewport();
+  renderNav();
+  renderRight(it);
+}
+
+function applyViewport() {
+  const wrap = el('frameWrap');
+  const frame = el('liveFrame');
+  const scroll = el('frameScroll');
+  if (wrap.style.display === 'none') return;
+
+  const avail = scroll.getBoundingClientRect();
+  const logicalW = vp.w;
+
+  // PC(fit): 패널 폭에 맞춰 항상 채움(축소만, 확대 안 함). device: 폭 초과 시에만 축소.
+  let scale = avail.width / logicalW;
+  if (vp.mode === 'device') scale = Math.min(1, scale);
+  scale = Math.max(0.1, scale);
+
+  // 세로는 패널 높이를 논리 높이로 환산해 채운다 → iframe 내부가 패널을 가득 채움
+  const padTop = vp.mode === 'device' ? 16 : 0;
+  const logicalH = Math.max(200, (avail.height - padTop) / scale);
+
+  frame.style.width = logicalW + 'px';
+  frame.style.height = logicalH + 'px';
+  frame.style.transform = `scale(${scale})`;
+
+  wrap.classList.toggle('boxed', vp.mode === 'device');
+  wrap.style.width = (logicalW * scale) + 'px';
+  wrap.style.height = (logicalH * scale) + 'px';
+
+  el('scaleBadge').textContent = Math.round(scale * 100) + '%';
+}
+
+// 컴포넌트 식별 slug 추출 (components/<slug>.html 또는 compose.html?comp=<slug>)
+// 컴포넌트 리네임으로 라우트ID와 SPECS 키가 어긋난 경우 여기에 매핑을 추가한다
+const SPEC_ALIAS = {};
+function specKey(path) {
+  let key = null;
+  let m = path.match(/[?&]comp=([^&#]+)/);
+  if (m) key = m[1];
+  else { m = path.match(/components\/([^.]+)\.html/); key = m ? m[1] : null; }
+  return key && SPEC_ALIAS[key] ? SPEC_ALIAS[key] : key;
+}
+
+// 경량 마크다운 → HTML 렌더러 (헤딩·표·리스트·인용·볼드·인라인코드·hr 지원)
+function mdToHtml(md) {
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  const lines = md.split('\n');
+  let html = '', i = 0, list = null;
+  const closeList = () => { if (list) { html += '</' + list + '>'; list = null; } };
+  const parseRow = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+  while (i < lines.length) {
+    const ln = lines[i];
+    // 표: 현재 줄에 |, 다음 줄이 구분선(---)
+    if (/^\s*\|/.test(ln) && i + 1 < lines.length && /^\s*\|?[\s:\-|]+\|?\s*$/.test(lines[i + 1]) && lines[i + 1].includes('-')) {
+      closeList();
+      const head = parseRow(ln); i += 2;
+      html += '<table><thead><tr>' + head.map((c) => '<th>' + inline(c) + '</th>').join('') + '</tr></thead><tbody>';
+      while (i < lines.length && /^\s*\|/.test(lines[i])) {
+        html += '<tr>' + parseRow(lines[i]).map((c) => '<td>' + inline(c) + '</td>').join('') + '</tr>'; i++;
+      }
+      html += '</tbody></table>'; continue;
+    }
+    let m;
+    if (m = ln.match(/^(#{1,4})\s+(.*)$/)) { closeList(); const lv = m[1].length; html += '<h' + lv + '>' + inline(m[2]) + '</h' + lv + '>'; i++; continue; }
+    if (/^---+\s*$/.test(ln)) { closeList(); html += '<hr>'; i++; continue; }
+    if (m = ln.match(/^>\s?(.*)$/)) { closeList(); html += '<blockquote>' + inline(m[1]) + '</blockquote>'; i++; continue; }
+    if (m = ln.match(/^\s*[-*]\s+(.*)$/)) { if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(m[1]) + '</li>'; i++; continue; }
+    if (m = ln.match(/^\s*\d+\.\s+(.*)$/)) { if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(m[1]) + '</li>'; i++; continue; }
+    if (/^\s*$/.test(ln)) { closeList(); i++; continue; }
+    closeList(); html += '<p>' + inline(ln) + '</p>'; i++;
+  }
+  closeList();
+  return html;
+}
+
+// 화면기획서 표시 언어 (KO/EN) — localStorage 영속
+let specLang = (() => { try { return localStorage.getItem('spec_canvas_spec_lang') || 'ko'; } catch (e) { return 'ko'; } })();
+
+function renderRight(it) {
+  const checks = getStore(LS_CHECK);
+  const notes = getStore(LS_NOTE);
+  const on = !!checks[it.path];
+  const sk = specKey(it.path);
+  const specKo = (window.SPECS || {})[sk];
+  const specEn = (window.SPECS_EN || {})[sk];
+  const hasEn = !!specEn;
+  const specMd = (specLang === 'en' && hasEn) ? specEn : specKo;
+  const statusLabel = it.status === 'todo' ? '⚠️ 미구현(404) — 구축 대상'
+    : it.status === 'auth' ? '🔒 보호경로 — PROTOTYPE_MODE 필요'
+    : it.status === 'dyn' ? '🔢 동적 라우트 — 샘플 ID 사용'
+    : it.status === 'ready' ? '🟢 정적 컴포넌트 — 제작완료(디자인시스템 기반)'
+    : it.status === 'dep' ? '⛔ 폐기 — 신규 연결 금지(52로 흡수)' : '✅ 공개 라우트';
+  el('paneRight').innerHTML = `
+    <h2>${it.label}</h2>
+    <div class="sub-path">${it.path}</div>
+    <div class="check-toggle ${on ? 'on' : ''}" id="chkToggle">
+      <span class="box">${on ? '✓' : ''}</span>
+      <span>${on ? '점검 완료' : '점검 완료로 표시'}</span>
+    </div>
+    ${specMd ? `<div class="desc-section">
+      <div class="h">화면기획서 (Screen Spec)</div>
+      <div class="spec-doc" id="specDoc">${mdToHtml(specMd)}</div>
+    </div>` : `
+    <div class="desc-section"><div class="h">상태</div><div class="body">${statusLabel}</div></div>
+    <div class="desc-section"><div class="h">설명</div><div class="body">${it.note}</div></div>`}
+    <div class="desc-section">
+      <div class="h">점검 메모</div>
+      <textarea class="notes" id="noteArea" placeholder="이 화면에서 확인한 것 / 빠진 것 / 구축해야 할 것…"></textarea>
+      <div class="saved-hint" id="saveHint">자동 저장됨</div>
+    </div>`;
+  el('chkToggle').onclick = () => {
+    const c = getStore(LS_CHECK); c[it.path] = !c[it.path];
+    if (!c[it.path]) delete c[it.path];
+    setStore(LS_CHECK, c); renderRight(it); renderNav();
+  };
+  const ta = el('noteArea');
+  ta.value = notes[it.path] || '';
+  ta.oninput = () => {
+    const n = getStore(LS_NOTE); n[it.path] = ta.value;
+    if (!ta.value) delete n[it.path];
+    setStore(LS_NOTE, n);
+    el('saveHint').textContent = '저장됨 ' + new Date().toLocaleTimeString();
+  };
+}
+
+// viewport buttons
+document.querySelectorAll('.vp-btn[data-w]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.vp-btn[data-w]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  vp = { w: Number(b.dataset.w), mode: b.dataset.mode };
+  applyViewport();
+});
+
+// ── 통합 언어 토글 (좌측 목록 + 중앙 화면 + 우측 기획서 한 번에 KO↔EN) ──
+function syncLangAll() {
+  const b = el('langAll'); if (!b) return;
+  const en = navLang === 'en';
+  b.textContent = en ? '🌐 EN' : '🌐 KO';
+  b.classList.toggle('on', en);
+}
+function setAllLang(lang) {
+  navLang = lang; pageLang = lang; specLang = lang;
+  try {
+    localStorage.setItem('spec_canvas_navlang', lang);
+    localStorage.setItem('spec_canvas_pagelang', lang);
+    localStorage.setItem('spec_canvas_spec_lang', lang);
+  } catch (e) {}
+  renderNav();
+  if (current) select(current);   // 중앙 frame + 우측 기획서 동시 재렌더
+  syncLangAll();
+}
+el('langAll').onclick = () => setAllLang(navLang === 'en' ? 'ko' : 'en');
+setAllLang(navLang);   // 초기 3개 언어 상태 일원화(혼합 방지)
+
+// 반응형: 하니스 창/패널 크기 변경 시 scale 재계산
+const ro = new ResizeObserver(() => applyViewport());
+ro.observe(el('frameScroll'));
+window.addEventListener('resize', applyViewport);
+
+el('reload').onclick = () => { if (current) el('liveFrame').src = el('liveFrame').src; };
+el('baseUrl').oninput = (e) => { baseUrl = e.target.value.trim(); checkConn(); };
+
+// connectivity check (no-cors HEAD via image trick won't work for HTML; use fetch no-cors)
+async function checkConn() {
+  const c = el('conn');
+  c.className = 'conn'; c.textContent = '확인 중…';
+  try {
+    await fetch(baseUrl.replace(/\/$/, '') + '/', { mode: 'no-cors' });
+    c.className = 'conn ok'; c.textContent = '● 연결됨';
+  } catch {
+    c.className = 'conn bad'; c.textContent = '● 연결 안 됨';
+  }
+}
+
+renderNav();
+checkConn();
+</script>
+</body>
+</html>

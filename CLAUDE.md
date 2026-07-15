@@ -33,4 +33,6 @@ spec-canvas/
   assets/css/              # tokens.css / admin-real.css / admin-components.css / harness-chrome.css
   assets/js/                # specs.js / specs-en.js / admin-shell.js
   docs/                    # 여기에 본인의 기획서·정책 문서를 넣는다
+  docs/plans/               # (선택) 본인의 구현 계획 문서
+  docs/specs/                # (선택) 본인의 화면/정책 설계 문서
 ```
